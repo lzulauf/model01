@@ -3,13 +3,13 @@
 // Copyright 2018 Luke Zulauf <lzulauf@gmail.com>
 // See "LICENSE" for license details
 
-/** Modifications
- *  Shifts are One-Shot-Modifiers
- *  Escape moved to left thu #4
- *  Backspace moved to ESC
- *  Shifts moved to third slot on thumbs
- *  Right alt moved to right thumb #4
- */
+// Modifications
+// Modifier keys are One-Shot-Modifier
+// One-shot has custom timeouts
+// FN-9/0 do parenthesis rather than F9/F10
+// Shifts moved to third slot on thumbs
+// Right alt moved to right thumb #4
+// Prog key = backtick, Num key = 0 because of accidental presses
 
 #ifndef BUILD_INFORMATION
 #define BUILD_INFORMATION "locally built"
@@ -33,6 +33,8 @@
 
 #include "Kaleidoscope-OneShot.h"
 #include "kaleidoscope/hid.h"
+#include "Kaleidoscope-LED-ActiveModColor.h"
+
 
 
 // Support for controlling the keyboard's LEDs
@@ -141,18 +143,18 @@ enum { QWERTY, NUMPAD, FUNCTION }; // layers
 const Key keymaps[][ROWS][COLS] PROGMEM = {
 
   [QWERTY] = KEYMAP_STACKED
-  (___,          Key_1, Key_2, Key_3, Key_4, Key_5, Key_LEDEffectNext,
+  (Key_Backtick, Key_1, Key_2, Key_3, Key_4, Key_5, Key_LEDEffectNext,
    Key_Backtick, Key_Q, Key_W, Key_E, Key_R, Key_T, Key_Tab,
    Key_PageUp,   Key_A, Key_S, Key_D, Key_F, Key_G,
-   Key_PageDown, Key_Z, Key_X, Key_C, Key_V, Key_B, Key_Backspace,
-   Key_LeftControl, Key_LeftGui, OSM(LeftShift), Key_Escape,
+   Key_PageDown, Key_Z, Key_X, Key_C, Key_V, Key_B, Key_Escape,
+   OSM(LeftControl), OSM(LeftGui), OSM(LeftShift), Key_Backspace,
    ShiftToLayer(FUNCTION),
 
-   M(MACRO_ANY),  Key_6, Key_7, Key_8,     Key_9,         Key_0,         LockLayer(NUMPAD),
+   M(MACRO_ANY),  Key_6, Key_7, Key_8,     Key_9,         Key_0,         Key_0, // LockLayer(NUMPAD),
    Key_Enter,     Key_Y, Key_U, Key_I,     Key_O,         Key_P,         Key_Equals,
                   Key_H, Key_J, Key_K,     Key_L,         Key_Semicolon, Key_Quote,
    Key_RightAlt,  Key_N, Key_M, Key_Comma, Key_Period,    Key_Slash,     Key_Minus,
-   Key_LeftAlt, OSM(RightShift), Key_Spacebar, Key_RightControl,
+   OSM(LeftAlt), OSM(RightShift), Key_Spacebar, OSM(RightControl),
    ShiftToLayer(FUNCTION)),
 
 
@@ -179,7 +181,7 @@ const Key keymaps[][ROWS][COLS] PROGMEM = {
    ___, Key_Delete, ___, ___,
    ___,
 
-   Consumer_ScanPreviousTrack, Key_F6,                 Key_F7,                   Key_F8,                   Key_F9,          Key_F10,          Key_F11,
+   Consumer_ScanPreviousTrack, Key_F6,                 Key_F7,                   Key_F8,                   Key_KeypadLeftParen,          Key_KeypadRightParen,          Key_F11,
    Consumer_PlaySlashPause,    Consumer_ScanNextTrack, Key_LeftCurlyBracket,     Key_RightCurlyBracket,    Key_LeftBracket, Key_RightBracket, Key_F12,
                                Key_LeftArrow,          Key_DownArrow,            Key_UpArrow,              Key_RightArrow,  ___,              ___,
    Key_PcApplication,          Consumer_Mute,          Consumer_VolumeDecrement, Consumer_VolumeIncrement, ___,             Key_Backslash,    Key_Pipe,
@@ -281,7 +283,7 @@ void setup() {
     &BootGreetingEffect,
 
     // The hardware test mode, which can be invoked by tapping Prog, LED and the left Fn button at the same time.
-    &TestMode,
+    // &TestMode,
 
     // LEDControl provides support for other LED modes
     &LEDControl,
@@ -295,24 +297,26 @@ void setup() {
 
     // The rainbow wave effect lights up your keyboard with all the colors of a rainbow
     // and slowly moves the rainbow across your keyboard
-    &LEDRainbowWaveEffect,
+    // &LEDRainbowWaveEffect,
 
     // The chase effect follows the adventure of a blue pixel which chases a red pixel across
     // your keyboard. Spoiler: the blue pixel never catches the red pixel
-    &LEDChaseEffect,
+    // &LEDChaseEffect,
 
     // These static effects turn your keyboard's LEDs a variety of colors
-    &solidRed, &solidOrange, &solidYellow, &solidGreen, &solidBlue, &solidIndigo, &solidViolet,
+    // &solidRed, &solidOrange, &solidYellow,
+    &solidGreen,
+    &solidBlue, &solidIndigo, &solidViolet,
 
     // The breathe effect slowly pulses all of the LEDs on your keyboard
-    &LEDBreatheEffect,
+    // &LEDBreatheEffect,
 
     // The AlphaSquare effect prints each character you type, using your
     // keyboard's LEDs as a display
-    &AlphaSquareEffect,
+    // &AlphaSquareEffect,
 
     // The stalker effect lights up the keys you've pressed recently
-    &StalkerEffect,
+    // &StalkerEffect,
 
     // The numpad plugin is responsible for lighting up the 'numpad' mode
     // with a custom LED effect
@@ -321,6 +325,9 @@ void setup() {
     // the oneshot plugin is responsible for sticky modifier keys
     &OneShot,
 
+    // the active mod color plugin highlights active modifier keys
+    // &ActiveModColorEffect,
+
     // The macros plugin adds support for macros
     &Macros,
 
@@ -328,22 +335,29 @@ void setup() {
     &MouseKeys
   );
 
+  // active mod color = white
+  // ActiveModColorEffect.highlight_color = CRGB(0xff, 0xff, 0xff);
+
+  // Oneshot double_tap timeout
+  OneShot.time_out = 3000;
+  OneShot.double_tap_time_out = 500;
+
   // While we hope to improve this in the future, the NumPad plugin
   // needs to be explicitly told which keymap layer is your numpad layer
   NumPad.numPadLayer = NUMPAD;
 
   // We configure the AlphaSquare effect to use RED letters
-  AlphaSquare.color = { 255, 0, 0 };
+  // AlphaSquare.color = { 255, 0, 0 };
 
   // We set the brightness of the rainbow effects to 150 (on a scale of 0-255)
   // This draws more than 500mA, but looks much nicer than a dimmer effect
-  LEDRainbowEffect.brightness(150);
-  LEDRainbowWaveEffect.brightness(150);
+  // LEDRainbowEffect.brightness(150);
+  // LEDRainbowWaveEffect.brightness(150);
 
   // The LED Stalker mode has a few effects. The one we like is
   // called 'BlazingTrail'. For details on other options,
   // see https://github.com/keyboardio/Kaleidoscope-LED-Stalker
-  StalkerEffect.variant = STALKER(BlazingTrail);
+  // StalkerEffect.variant = STALKER(BlazingTrail);
 
   // We want to make sure that the firmware starts with LED effects off
   // This avoids over-taxing devices that don't have a lot of power to share
